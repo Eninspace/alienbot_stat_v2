@@ -1,1 +1,1 @@
-TOKEN = ''  # your tg token from botfather
+TOKEN = 'test'  # your tg token from botfather
