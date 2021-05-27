@@ -82,7 +82,7 @@ def notifications():
                 time.sleep(1800)  # задержка перед отправкой нового уведомления 30 мин # TODO: config var or set
 
 
-# th = Thread(target=notifications, args=("Lol", ))
-th = Thread(target=notifications, args=())
-th.daemon = True
-th.start()
+
+th0 = Thread(target=notifications, args=())
+th0.daemon = True
+th0.start()

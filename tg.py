@@ -3,6 +3,7 @@ from notifications import *
 from nft import *
 from ploting import *
 
+
 #---------------------------------------------------TG------------------------------------------------------------------------------------
 @bot.message_handler(commands = ['show_accounts'])
 def show_account(message):
@@ -225,11 +226,15 @@ def callback_worker_notice(call):
 
 
 
-
-
-
-
-
-
 bot.polling(none_stop=True, interval=0)
+
+
+
+
+
+
+if __name__ == '__main__':
+    th1 = Thread(target=run)
+    th1.daemon = True
+    th1.start()
 #---------------------------------------------------TG------------------------------------------------------------------------------------

@@ -8,6 +8,8 @@ import string
 import random
 
 
+plt.switch_backend('agg')
+
 S = 4  # number of characters in the string.
 # call random.choices() string module to find the string in Uppercase + numeric data.
 ran = ''.join(random.choices(string.ascii_uppercase + string.digits, k = S))
@@ -30,6 +32,7 @@ def render_7d_stat(account):
     file_name = f'{ran}.png'
     plt.savefig(file_name)
     return file_name
+
 
 
 # def tr():
