@@ -1,3 +1,4 @@
+import os
 from stat_ import *
 from notifications import *
 from nft import *
@@ -83,6 +84,7 @@ def callback_worker7d(call):
         bot.send_message(call.from_user.id, text, parse_mode="HTML")
         image_7d = open(image_7d, 'rb')
         bot.send_photo(call.from_user.id, image_7d)
+        os.remove(image_7d)
     else:
         bot.send_message(call.from_user.id, "Меньше 7д (в разработке)", parse_mode="HTML") ## TODO: if statistics less than 7 days
 
