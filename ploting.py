@@ -6,13 +6,14 @@ from stat_ import *
 import matplotlib.pyplot as plt
 import string
 import random
-
+import os
 
 plt.switch_backend('agg')
 
+
 S = 4  # number of characters in the string.
 # call random.choices() string module to find the string in Uppercase + numeric data.
-ran = ''.join(random.choices(string.ascii_uppercase + string.digits, k = S))
+ran = ''.join(random.choices(string.ascii_lowercase + string.digits, k = S))
 ran = str(ran)  # print the random data
 
 
@@ -34,7 +35,11 @@ def render_7d_stat(account):
     return file_name
 
 
-
+def del_images():
+    dir_name = os.getcwd()
+    for item in os.listdir(dir_name):
+        if item.endswith(".png"):
+            os.remove(os.path.join(dir_name, item))
 # def tr():
 #     con = sq.connect("db.db")
 #     con.row_factory = sq.Row

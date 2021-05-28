@@ -78,6 +78,7 @@ def callback_worker24h(call):
 
 @bot.callback_query_handler(func = lambda call: call.data.startswith('7d_id_'))
 def callback_worker7d(call):
+    del_images()  #del old images
     bot.send_message(call.from_user.id, "Подождите...")
     index = int(call.data.replace("7d_id_", ""))
     account = get_accounts(call.from_user.id, index)
@@ -91,9 +92,8 @@ def callback_worker7d(call):
 {days_7[4][0]} - {days_7[4][1]} TLM\n{days_7[5][0]} - {days_7[5][1]} TLM\n{days_7[6][0]} - {days_7[6][1]} TLM
         """
         bot.send_message(call.from_user.id, text, parse_mode="HTML")
-        image_7d = open(image_7d, 'rb')
-        bot.send_photo(call.from_user.id, image_7d)
-        os.remove(image_7d)
+        image_7d_buffered = open(image_7d, 'rb')
+        bot.send_photo(call.from_user.id, image_7d_buffered)
     else:
         bot.send_message(call.from_user.id, "Меньше 7д (в разработке)", parse_mode="HTML") ## TODO: if statistics less than 7 days
 
