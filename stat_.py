@@ -31,8 +31,10 @@ def get_timestamp(date_obj):
     return int(datetime.datetime.timestamp(date_obj))
 
 def get_date(timestamp):
-    timestamp = int(timestamp)
-    return datetime.datetime.fromtimestamp(timestamp)
+    if len(str(timestamp)) == 13:
+        return datetime.datetime.fromtimestamp(int(timestamp)/1000.0).replace(microsecond = 0)
+    else:
+        return datetime.datetime.fromtimestamp(timestamp)
 
 
 
@@ -630,7 +632,6 @@ def get_num_rows(user_id): # Получаем количество аккаун�
     cur.execute("SELECT user_id from users WHERE user_id = ?", (user_id,))
     num_row = cur.fetchall()
     num_row = len(num_row)
-    print(num_row)
     return num_row
 
 
