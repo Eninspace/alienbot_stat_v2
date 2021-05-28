@@ -51,10 +51,19 @@ def callback_worker(call):
 
 
 @bot.callback_query_handler(func = lambda call: call.data.startswith('show_nfts_'))
-def callback_worker24h(call):
+def callback_worker(call):
     index = int(call.data.replace("show_nfts_", ""))
     account = get_accounts(call.from_user.id, index)
-    bot.send_message(call.from_user.id, f"NFT {account}\n{get_nft(account)}")
+    sync_nfts(account)
+    nfts = []
+    for nft in get_nfts(account):
+        l = list(nft)
+        nfts.append(l)
+    payload = ""
+    for nft_arr in nfts:
+        string = f'<a href=\"https://wax.atomichub.io/explorer/asset/{nft_arr[1]}\">{nft_arr[0]}</a>, received {get_date(nft_arr[2])} UTC, price {nft_arr[3]} WAX, update time price {get_date(nft_arr[4])}\n'
+        payload += string
+    bot.send_message(call.from_user.id, f"NFTs {account}\n{payload}", parse_mode="HTML", disable_web_page_preview=True)
 
 
 @bot.callback_query_handler(func = lambda call: call.data.startswith('24h_id_'))
