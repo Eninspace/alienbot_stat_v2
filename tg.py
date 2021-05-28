@@ -79,7 +79,8 @@ def callback_worker24h(call):
 @bot.callback_query_handler(func = lambda call: call.data.startswith('7d_id_'))
 def callback_worker7d(call):
     del_images()  #del old images
-    bot.send_message(call.from_user.id, "Подождите...")
+    bot.send_chat_action(call.from_user.id, "typing")
+    #bot.send_message(call.from_user.id, "Подождите...")
     index = int(call.data.replace("7d_id_", ""))
     account = get_accounts(call.from_user.id, index)
     days_7 = get_last_7days_stats(account)
@@ -102,7 +103,7 @@ def callback_worker7d(call):
 def callback_worker(call):
     #call.data = int(call.data.replace("id_", ""))
     accounts = all_accounts(call.from_user.id)
-    bot.send_message(call.from_user.id, f"Ожидайте...")
+    bot.send_chat_action(call.from_user.id, "typing")
     print("call.data =", call.data)
     print("Stats for user_id =", call.from_user.id)
     #bot.send_message(call.from_user.id, f"Подождите примерно {estimated_time_sync(account)} секунд")
