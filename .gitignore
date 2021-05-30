@@ -1,5 +1,7 @@
 /__pycache__
 /*.png
+/build
+/dist
 *.txt
 *.db
 config.py
