@@ -4,3 +4,4 @@
 *.db
 config.py
 debug.py
+*.spec
