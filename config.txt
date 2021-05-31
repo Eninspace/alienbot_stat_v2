@@ -1,0 +1,2 @@
+TOKEN = 1111111111:AAAAAbsldjkfasdfasdfsadfsadf
+user_id = 5001231234
