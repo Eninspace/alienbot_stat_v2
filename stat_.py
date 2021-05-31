@@ -144,7 +144,6 @@ def _get_tlm_staked(account):
             return summ
 
 
-
 def get_cpu(account):
     #url = "http://wax.greymass.com/v1/chain/get_account"
     _url = url + "/v1/chain/get_account"
@@ -588,11 +587,12 @@ def get_average_tlm_for_period(account):
 
 
 def mined_last_day(accounts):
-    if diffrent_sync(account) > 0:
-        print(f"IFNO: Started sync for account {account}")
-        sync_db(account)
-    else:
-        print(f"IFNO: DB for account already sunced {account}")
+    for account in accounts:
+        if diffrent_sync(account) > 0:
+            print(f"IFNO: Started sync for account {account}")
+            sync_db(account)
+        else:
+            print(f"IFNO: DB for account already sunced {account}")
     start = datetime.datetime.today() - datetime.timedelta(days=1)
     end = datetime.datetime.today()
     total_mined = 0
@@ -620,7 +620,12 @@ def today_mined_one(call, account):
 
 
 def mined_last_hour(accounts):
-    sync_many(accounts)
+    for account in accounts:
+        if diffrent_sync(account) > 0:
+            print(f"IFNO: Started sync for account {account}")
+            sync_db(account)
+        else:
+            print(f"IFNO: DB for account already sunced {account}")
     start = datetime.datetime.utcnow() - datetime.timedelta(hours=1)
     end = datetime.datetime.utcnow()
     total_mined = 0
