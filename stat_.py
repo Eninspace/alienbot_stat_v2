@@ -1,23 +1,23 @@
 import requests
 import json
 import re
-
 import time
 import datetime
-from config import TOKEN
 from sql import *
 import sqlite3 as sq
-
 import telebot
 from telebot import types
 import pandas as pd
 
 
+with open('config.txt', 'r', encoding='utf8') as file:
+    data = file.readlines()
+
+TOKEN = data[0].split(' = ')[1].split('\n')[0]
 bot = telebot.TeleBot(TOKEN)
 
 
 array_list = []
-
 
 
 def get_datetime(block_time): #get datetime object from block_time ISO-....
@@ -75,18 +75,23 @@ def check_server_status():
 check_server_status()
 
 def check_exists_account(account):
-    #url = f"https://api.waxsweden.org/v2/history/get_creator?account={account}"
-    url = f"https://wax.eosrio.io/v2/history/get_creator?account={account}"
-    out = requests.get(url)
-    out = json.loads(out.text)
-    try:
-        if out['account'] == account:
-            return True
-    except KeyError:
+    _url = url + "/v1/chain/get_account"
+    data = {"account_name":account}
+    data = json.dumps(data)
+    out = requests.post(_url, data=data)
+    if out.status_code == 200:
+        try:
+            out = json.loads(out.text)
+            if out['account_name'] == account:
+                return True
+        except KeyError:
+            return False
+        except requests.exceptions.SSLError as error:
+            return error
+    elif out.status_code == 500:
         return False
-    except requests.exceptions.SSLError:
-        return Error
-
+    else:
+        print(f'error Status server {out.status_code}')
 
 
 def get_tlm_price():
@@ -183,6 +188,16 @@ def get_max_tx(account):
     out = json.loads(out.text)
     max_tx = out['actions'][0]['account_action_seq'] + 1
     return max_tx
+
+
+def get_accounts_from_config():
+    with open('accounts.txt', 'r', encoding='utf8') as file:
+        accounts = file.readlines()
+    conv_accounts = []
+    for element in accounts:
+        conv_accounts.append(element.strip())
+    return conv_accounts
+
 
 def get_last_tlm_tx(account):
     print("DEBUG: Called func get_last_tlm_tx()")
@@ -294,7 +309,6 @@ def get_tlm_for_date(account, start_time, end_time):
             print("DEBUG: get_tlm_for_date() Соединение с SQLite закрыто")
 
 
-
 def get_first_tlm_tx_db(account):
     table_name = convert_account(account)
     with sq.connect("db.db") as con:
@@ -303,6 +317,7 @@ def get_first_tlm_tx_db(account):
         cur.execute(f"SELECT block_time FROM {table_name} ORDER BY rowid ASC LIMIT 1")
         first_date = get_date(cur.fetchone()['block_time'])
         return first_date
+
 
 def get_last_tlm_tx_db(account):
     try:
@@ -321,9 +336,6 @@ def get_last_tlm_tx_db(account):
         if con:
             con.close()
             print("DEBUG: get_last_tlm_tx_db() Соединение с SQLite закрыто")
-
-
-
 
 
 def get_tlm_range(account, pos, num):
@@ -422,7 +434,6 @@ def sync_many(accounts):
 
 
 def make_days_stats(account):
-    sync_db(account)
     print(f"INFO: Called make_days_stats() {account}")
 
     first_date = get_first_tlm_tx_db(account).replace(minute=0, hour=0, second=0, microsecond=0)  # datetime object
@@ -512,7 +523,11 @@ def get_accounts_tlm(accounts, start, end): # Получаем количест�
 
 
 def get_amount_tlm_tx_for_period(account):
-    sync_db(account)
+    if diffrent_sync(account) > 0:
+        print(f"IFNO: Started sync for account {account}")
+        sync_db(account)
+    else:
+        print(f"IFNO: DB for account already sunced {account}")
     table_name = convert_account(account)
     con = sq.connect("db.db")
     #con.row_factory = sq.Row
@@ -524,23 +539,6 @@ def get_amount_tlm_tx_for_period(account):
 
     results = cur.fetchone()[0]
     return results
-
-
-def get_average_tlm_for_period(account):
-    sync_db(account)
-    table_name = convert_account(account)
-    con = sq.connect("db.db")
-    #con.row_factory = sq.Row
-    cur = con.cursor()
-    start = get_timestamp(datetime.datetime.today() - datetime.timedelta(days=1))
-    end = get_timestamp(datetime.datetime.today())
-
-    cur.execute(f"SELECT amount_tlm FROM {table_name} WHERE block_time BETWEEN {start} AND {end}")
-    print(get_date(start), get_date(end))
-    result = [item[0] for item in cur.fetchall()]
-    result = [float(x) for x in result]
-    result = round(sum(result) / len(result), 4)
-    return result
 
 
 def diffrent_sync(account):
@@ -565,16 +563,36 @@ def diffrent_sync(account):
         return 0
 
 
-def estimated_time_sync(account):
-    diff = diffrent_sync(account)
-    print("Diffrent tx", diff)
-    est_time = 2 + diff * 0.03 #0.03 время синхронизации одного строчки
-    est_time = int(est_time)
-    return est_time
+def get_average_tlm_for_period(account):
+    if diffrent_sync(account) > 0:
+        print(f"IFNO: Started sync for account {account}")
+        sync_db(account)
+    else:
+        print(f"IFNO: DB for account already sunced {account}")
+    table_name = convert_account(account)
+    con = sq.connect("db.db")
+    #con.row_factory = sq.Row
+    cur = con.cursor()
+    start = get_timestamp(datetime.datetime.today() - datetime.timedelta(days=1))
+    end = get_timestamp(datetime.datetime.today())
+
+    cur.execute(f"SELECT amount_tlm FROM {table_name} WHERE block_time BETWEEN {start} AND {end}")
+    print(get_date(start), get_date(end))
+    result = [item[0] for item in cur.fetchall()]
+    result = [float(x) for x in result]
+    try:
+        result = round(sum(result) / len(result), 4)
+        return result
+    except ZeroDivisionError:
+        return 0
 
 
 def mined_last_day(accounts):
-    sync_many(accounts)
+    if diffrent_sync(account) > 0:
+        print(f"IFNO: Started sync for account {account}")
+        sync_db(account)
+    else:
+        print(f"IFNO: DB for account already sunced {account}")
     start = datetime.datetime.today() - datetime.timedelta(days=1)
     end = datetime.datetime.today()
     total_mined = 0
@@ -585,6 +603,11 @@ def mined_last_day(accounts):
 
 
 def today_mined_one(call, account):
+    if diffrent_sync(account) > 0:
+        print(f"IFNO: Started sync for account {account}")
+        sync_db(account)
+    else:
+        print(f"IFNO: DB for account already sunced {account}")
     print("DEBUG: Called func today_mined_one()")
     #start = datetime.datetime.today() - datetime.timedelta(days=1)
     start = datetime.datetime.utcnow()
@@ -615,15 +638,6 @@ def get_alltlm_range(start, end): #Only one day period because delta.days can't 
         get_accounts_tlm(accounts, start, next_date)
 
 
-def get_accounts(user_id, i):
-    con = sq.connect("db.db")
-    con.row_factory = sq.Row
-    cur = con.cursor()
-    cur.execute("SELECT account FROM users WHERE user_id = ?", (user_id,))
-    results = cur.fetchall()
-    return results[i]['account']
-
-
 def get_num_rows(user_id): # Получаем количество аккаунтов для данного юзера
     print('DEBUG: Called func get_num_rows')
     con = sq.connect("db.db")
@@ -633,6 +647,23 @@ def get_num_rows(user_id): # Получаем количество аккаун�
     num_row = cur.fetchall()
     num_row = len(num_row)
     return num_row
+
+
+def get_accounts(user_id, i):
+    con = sq.connect("db.db")
+    con.row_factory = sq.Row
+    cur = con.cursor()
+    cur.execute("SELECT account FROM users WHERE user_id = ?", (user_id,))
+    results = cur.fetchall()
+    return results[i]['account']
+
+
+def all_accounts(user_id):
+    accounts = []
+    for i in range(0, get_num_rows(user_id)):
+        account = get_accounts(user_id, i)
+        accounts.append(account)
+    return accounts
 
 
 def get_array_user_ids():
@@ -646,9 +677,8 @@ def get_array_user_ids():
     return array_user_id
 
 
-def all_accounts(user_id):
-    accounts = []
-    for i in range(0, get_num_rows(user_id)):
-        account = get_accounts(user_id, i)
-        accounts.append(account)
-    return accounts
+def sync():
+    while True:
+        for i in get_array_user_ids():
+            sync_many(all_accounts(i))
+        time.sleep(3600)

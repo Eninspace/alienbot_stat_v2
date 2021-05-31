@@ -40,7 +40,7 @@ def callback_worker(call):
     #button_del = types.InlineKeyboardButton(text = "Удалить аккаунт", callback_data = f'del_{index}')
     markup_inline.row(button_ss, button_s7)
     markup_inline.add(button_nft)
-    bot.send_message(call.from_user.id, f'Аккаунт: <code>{get_accounts(call.from_user.id, index)}</code>\n CPU Load: {get_cpu(account)[1]}%', reply_markup = markup_inline, parse_mode="HTML")
+    bot.send_message(call.from_user.id, f'Аккаунт: <code>{get_accounts(call.from_user.id, index)}</code>\nCPU Load: {get_cpu(account)[1]}%\n Есть NFT для клейма? {"Да" if get_available_claim(account) is True else "Нет"}', reply_markup = markup_inline, parse_mode="HTML")
     #bot.send_message(message.from_user.id, f"Аккаунт: {get_accounts(call.from_user.id, index)}", reply_markup = markup_inline)
 
     print("DEBUG: index =", index)
@@ -70,7 +70,6 @@ def callback_worker(call):
 def callback_worker24h(call):
     index = int(call.data.replace("24h_id_", ""))
     account = get_accounts(call.from_user.id, index)
-    bot.send_message(call.from_user.id, f"Добавляю {diffrent_sync(account)} транзакций, подождите...")
     start, end, today_mined_tlm = today_mined_one(call, account)
     mined_usd = get_tlm_price() * today_mined_tlm
     bot.send_message(call.from_user.id, f'Аккаунт: <code>{get_accounts(call.from_user.id, index)}</code>\nСтатистика за последние 24 часа по UTC\nс {start} по {end}\n Количество майнов <code>{get_amount_tlm_tx_for_period(account)}</code>\nСредний майн: <code>{get_average_tlm_for_period(account)}</code>\n <code>{today_mined_tlm}</code> TLM Mined - $<code>{round(mined_usd, 2)}</code>', parse_mode="HTML")
@@ -80,7 +79,6 @@ def callback_worker24h(call):
 def callback_worker7d(call):
     del_images()  #del old images
     bot.send_chat_action(call.from_user.id, "typing")
-    #bot.send_message(call.from_user.id, "Подождите...")
     index = int(call.data.replace("7d_id_", ""))
     account = get_accounts(call.from_user.id, index)
     days_7 = get_last_7days_stats(account)
@@ -111,7 +109,13 @@ def callback_worker(call):
     # TODO: Add amount mine for day for all accounts
     mined_tlm = mined_last_day(accounts)
     mined_usd = get_tlm_price() * mined_tlm
-    bot.send_message(call.from_user.id, f'Статистика за последние 24 часа\n <code>{mined_tlm}</code> TLM Mined - $<code>{round(mined_usd, 2)}</code>', parse_mode="HTML")
+    def get_accounts_claim():
+        claim_accounts = []
+        for account in accounts:
+            if get_available_claim(account) is True:
+                claim_accounts.append(account)
+        return claim_accounts
+    bot.send_message(call.from_user.id, f'Статистика за последние 24 часа\n <code>{mined_tlm}</code> TLM Mined - $<code>{round(mined_usd, 2)}</code>\nNFT для клейма {get_accounts_claim()}', parse_mode="HTML")
 
 
 
@@ -180,7 +184,7 @@ def add_account(call):
     bot.send_message(call.from_user.id, "Напиши свой аккаунт WAX")
     bot.register_next_step_handler(call.message, reg)
 
-def reg(message):
+def reg(message): # arg = account
     user_id = message.from_user.id
     account = message.text
     if check_exists_account(account) is True:
@@ -208,6 +212,29 @@ def reg(message):
         bot.send_message(message.from_user.id, f"Аккаунт {account} не существует")
 
 
+def reg_accounts_from_file(accounts):
+    for account in accounts:
+        if check_exists_account(account) is True:
+            con = sq.connect("db.db")
+            con.row_factory = sq.Row
+            cur = con.cursor()
+            cur.execute(f"""CREATE TABLE IF NOT EXISTS users (
+            user_id INTEGER,
+            account TEXT,
+            notifications BOOLEAN DEFAULT 0
+            )""")
+            con.commit()
+            cur.execute(f"SELECT account FROM users WHERE account = ?", (account,))
+            if cur.fetchone() is None:
+                cur.execute(f"INSERT INTO users(user_id, account) VALUES (?, ?)", (user_id, account))
+                con.commit()
+                print(f"Account {account} added in DB")
+            else:
+                print(f"Account {account} already exists in DB")
+            con.close()
+        else:
+            print(f"Аккаунт {account} не существует")
+
 
 @bot.callback_query_handler(func = lambda call: True)
 def callback_worker_notice(call):
@@ -215,13 +242,13 @@ def callback_worker_notice(call):
         if check_notifications(call.from_user.id) == 0:
             markup_inline = types.InlineKeyboardMarkup() # Объект клавиатуры
             button_yes = types.InlineKeyboardButton(text = "Да", callback_data = "notice_on")
-            button_no = types.InlineKeyboardButton(text = "Нет", callback_data = "cancel")
+            button_no = types.InlineKeyboardButton(text = "Отмена", callback_data = "cancel")
             markup_inline.add(button_yes, button_no)
             bot.send_message(call.from_user.id, 'Уведомления отключены. Включить уведомления?', reply_markup = markup_inline)
         elif check_notifications(call.from_user.id) == 1:
             markup_inline = types.InlineKeyboardMarkup() # Объект клавиатуры
             button_yes = types.InlineKeyboardButton(text = "Да", callback_data = "notice_off")
-            button_no = types.InlineKeyboardButton(text = "Нет", callback_data = "cancel")
+            button_no = types.InlineKeyboardButton(text = "Отмена", callback_data = "cancel")
             markup_inline.add(button_yes, button_no)
             bot.send_message(call.from_user.id, 'Уведомления включены. Отключить уведомления?', reply_markup = markup_inline)
 
@@ -234,7 +261,10 @@ def callback_worker_notice(call):
             off_notifications(call.from_user.id)
             bot.send_message(call.from_user.id, 'Уведомления отключены')
             print(f"INFO: user {call.from_user.id} turn off notifications")
+    elif call.data.startswith('cancel'):
+        if call.data == 'cancel':
+            bot.delete_message(call.from_user.id, call.message.message_id)
 
 
-
-bot.polling(none_stop=True, interval=0)
+def run_bot():
+    bot.polling(none_stop=True, interval=0)

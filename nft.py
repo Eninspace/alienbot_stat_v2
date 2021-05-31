@@ -105,6 +105,36 @@ def get_nfts(account):
             con.close()
             print("DEBUG: Соединение с SQLite закрыто")
 
+
+def get_available_claim(account):
+    _url = "https://wax.pink.gg/v1/chain/get_table_rows"
+    payload = {
+        "json": True,
+        "code": "m.federation",
+        "scope": "m.federation",
+        "table": "claims",
+        "table_key": "",
+        "lower_bound": account,
+        "upper_bound": None,
+        "index_position": 1,
+        "key_type": "",
+        "limit": "1",
+        "reverse": False,
+        "show_payer": False
+    }
+    payload = json.dumps(payload)
+    res = requests.post(_url, data=payload)
+    if res.status_code == 200:
+        if json.loads(res.text)['rows'][0]['miner'] == account:
+            print(account)
+            return True
+        else:
+            return False
+    else:
+        print('ERROR: get_available_claim')
+        return False
+
+print(get_available_claim("w4ee4.wam"))
 # TODO: cycle parsing nfts
 # OPTIMIZE: searching new nfts
 # TODO: notifications for new finded nfts
