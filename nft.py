@@ -26,7 +26,8 @@ def get_price_nft(template_id):  # get lowerst price by template_id
             date_price = res['data'][0]['updated_at_time']  # utc
             return price, date_price
         else:
-            print(f'error Status server {out.status_code}')
+            print(f'ERROR: Status server {res.status_code}')
+            return 0, 0
     else:
         print('ERROR: unexpected template_id')
         return 0, 0

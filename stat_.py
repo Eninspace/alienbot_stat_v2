@@ -3,7 +3,6 @@ import json
 import re
 import time
 import datetime
-from sql import *
 import sqlite3 as sq
 import telebot
 from telebot import types
@@ -14,6 +13,8 @@ with open('config.txt', 'r', encoding='utf8') as file:
     data = file.readlines()
 
 TOKEN = data[0].split(' = ')[1].split('\n')[0]
+USER_ID = data[1].split(' = ')[1].split('\n')[0]
+
 bot = telebot.TeleBot(TOKEN)
 
 
@@ -522,11 +523,12 @@ def get_accounts_tlm(accounts, start, end): # Получаем количест�
 
 
 def get_amount_tlm_tx_for_period(account):
-    if diffrent_sync(account) > 0:
+    diff = diffrent_sync(account)
+    if diff > 0 or diff == -1:
         print(f"IFNO: Started sync for account {account}")
         sync_db(account)
     else:
-        print(f"IFNO: DB for account already sunced {account}")
+        print(f"IFNO: DB for account already synced {account}")
     table_name = convert_account(account)
     con = sq.connect("db.db")
     #con.row_factory = sq.Row
@@ -559,7 +561,7 @@ def diffrent_sync(account):
         return diff
     except sq.OperationalError:
         print("ERROR: Looks that DB is not exists\n")
-        return 0
+        return -1
 
 
 def get_average_tlm_for_period(account):
@@ -567,7 +569,7 @@ def get_average_tlm_for_period(account):
         print(f"IFNO: Started sync for account {account}")
         sync_db(account)
     else:
-        print(f"IFNO: DB for account already sunced {account}")
+        print(f"IFNO: DB for account already synced {account}")
     table_name = convert_account(account)
     con = sq.connect("db.db")
     #con.row_factory = sq.Row
@@ -588,11 +590,12 @@ def get_average_tlm_for_period(account):
 
 def mined_last_day(accounts):
     for account in accounts:
-        if diffrent_sync(account) > 0:
+        diff = diffrent_sync(account)
+        if diff > 0 or diff == -1:
             print(f"IFNO: Started sync for account {account}")
             sync_db(account)
         else:
-            print(f"IFNO: DB for account already sunced {account}")
+            print(f"IFNO: DB for account already synced {account}")
     start = datetime.datetime.today() - datetime.timedelta(days=1)
     end = datetime.datetime.today()
     total_mined = 0
@@ -603,11 +606,12 @@ def mined_last_day(accounts):
 
 
 def today_mined_one(call, account):
-    if diffrent_sync(account) > 0:
+    diff = diffrent_sync(account)
+    if diff > 0 or diff == -1:
         print(f"IFNO: Started sync for account {account}")
         sync_db(account)
     else:
-        print(f"IFNO: DB for account already sunced {account}")
+        print(f"IFNO: DB for account already synced {account}")
     print("DEBUG: Called func today_mined_one()")
     #start = datetime.datetime.today() - datetime.timedelta(days=1)
     start = datetime.datetime.utcnow()
@@ -621,11 +625,12 @@ def today_mined_one(call, account):
 
 def mined_last_hour(accounts):
     for account in accounts:
-        if diffrent_sync(account) > 0:
+        diff = diffrent_sync(account)
+        if diff > 0 or diff == -1:
             print(f"IFNO: Started sync for account {account}")
             sync_db(account)
         else:
-            print(f"IFNO: DB for account already sunced {account}")
+            print(f"IFNO: DB for account already synced {account}")
     start = datetime.datetime.utcnow() - datetime.timedelta(hours=1)
     end = datetime.datetime.utcnow()
     total_mined = 0

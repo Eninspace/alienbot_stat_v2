@@ -9,7 +9,7 @@ from ploting import *
 def show_account(message):
     if get_num_rows(message.from_user.id) == 0:
         print(f'INFO: User {message.from_user.id} doesn\'n have accounts')
-        bot.send_message(message.from_user.id, "У Вас нема аккаунтов /add_account")
+        bot.send_message(message.from_user.id, "У Вас нема аккаунтов /menu")
     elif get_num_rows(message.from_user.id) > 0:
         markup_inline = types.InlineKeyboardMarkup() # Объект клавиатуры
 
@@ -40,7 +40,7 @@ def callback_worker(call):
     #button_del = types.InlineKeyboardButton(text = "Удалить аккаунт", callback_data = f'del_{index}')
     markup_inline.row(button_ss, button_s7)
     markup_inline.add(button_nft)
-    bot.send_message(call.from_user.id, f'Аккаунт: <code>{get_accounts(call.from_user.id, index)}</code>\nCPU Load: {get_cpu(account)[1]}%\n Есть NFT для клейма? {"Да" if get_available_claim(account) is True else "Нет"}', reply_markup = markup_inline, parse_mode="HTML")
+    bot.send_message(call.from_user.id, f'Аккаунт: <code>{get_accounts(call.from_user.id, index)}</code>\nCPU Load: {get_cpu(account)[1]}%\nЕсть NFT для клейма? {"Да" if get_available_claim(account) is True else "Нет"}', reply_markup = markup_inline, parse_mode="HTML")
     #bot.send_message(message.from_user.id, f"Аккаунт: {get_accounts(call.from_user.id, index)}", reply_markup = markup_inline)
 
     print("DEBUG: index =", index)
@@ -213,6 +213,7 @@ def reg(message): # arg = account
 
 
 def reg_accounts_from_file(accounts):
+    user_id = USER_ID
     for account in accounts:
         if check_exists_account(account) is True:
             con = sq.connect("db.db")
