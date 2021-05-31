@@ -19,11 +19,14 @@ def get_price_nft(template_id):  # get lowerst price by template_id
         }
 
         res = requests.get(_url, headers=headers)
-        res = json.loads(res.text)
-        price = int(res['data'][0]['listing_price']) / 100000000
-        #currency = res['data'][0]['listing_symbol']
-        date_price = res['data'][0]['updated_at_time'] # utc
-        return price, date_price
+        if res.status_code == 200:
+            res = json.loads(res.text)
+            price = int(res['data'][0]['listing_price']) / 100000000
+            #currency = res['data'][0]['listing_symbol']
+            date_price = res['data'][0]['updated_at_time']  # utc
+            return price, date_price
+        else:
+            print(f'error Status server {out.status_code}')
     else:
         print('ERROR: unexpected template_id')
         return 0, 0
@@ -134,7 +137,6 @@ def get_available_claim(account):
         print('ERROR: get_available_claim')
         return False
 
-print(get_available_claim("w4ee4.wam"))
 # TODO: cycle parsing nfts
 # OPTIMIZE: searching new nfts
 # TODO: notifications for new finded nfts
