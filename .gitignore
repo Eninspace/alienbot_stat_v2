@@ -7,3 +7,4 @@
 config.py
 debug.py
 *.spec
+sql.py
