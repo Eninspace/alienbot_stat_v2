@@ -1,4 +1,4 @@
-Telegram bot for statistics alienworlds\
+Telegram bot for collecting statistics
 
 Download latest release from https://github.com/Eninspace/alienbot_stat_v2/releases/
 
